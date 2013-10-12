@@ -35,13 +35,11 @@ typedef struct __NTP_PACKET_
 	uint32 	trantimestamplow ;
 }NtpPacket ;
 
-
-
-
 int main()
 {
 	int sockfd ;
 	char sendbuf[300];
+	NtpPacket ntp;
 	struct tm tmtime ; 
 	time_t localtime ,nettime;
 	struct sockaddr_in server ;
