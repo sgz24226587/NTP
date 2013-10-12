@@ -13,6 +13,29 @@
 
 char destip[4][64] = { {"202.120.2.101"},{"122.226.192.4"},{"218.75.4.130"},{"210.72.145.44"}};
 
+#define uint8   unsigned char 
+#define uint32	unsigned long 
+
+typedef struct __NTP_PACKET_
+{
+	uint8 	li_vn_mode 		;
+	uint8 	stratum 		;
+	uint8 	poll 			;
+	uint8  	precision  		;
+	uint32 	root_delay   	;
+	uint32 	root_dispersion ;
+	uint8 	ref_id[4]		;
+	uint32	reftimestamphigh;
+	uint32 	reftimestamplow	;
+	uint32 	oritimestamphigh;
+	uint32	oritimestamplow	;
+	uint32	recvtimestamphigh;
+	uint32 	recvtimestamplow;
+	uint32 	trantimestamphigh;
+	uint32 	trantimestamplow ;
+}NtpPacket ;
+
+
 
 
 int main()
