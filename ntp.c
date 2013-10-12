@@ -51,6 +51,7 @@ int main()
 	socklen_t addrlen = sizeof(struct sockaddr);
 
 
+	bzero(&ntp,sizeof(ntp));
 	sockfd = socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP);
 	
 	if(sockfd < 0)
