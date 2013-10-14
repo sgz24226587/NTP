@@ -2,7 +2,7 @@
 
 date=`date`
 
-git add *.c  *.sh 
+git add *.c  *.sh  README 
 
 git commit -m " $date push"
 
