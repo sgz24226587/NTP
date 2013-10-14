@@ -38,8 +38,8 @@ typedef struct __NTP_PACKET_
 int main()
 {
 	int sockfd ;
-	char sendbuf[300];
-	NtpPacket ntp;
+	NtpPacket ntpsend;
+	NtpPacket ntprecv;
 	struct tm tmtime ; 
 	time_t localtime ,nettime;
 	struct sockaddr_in server ;
@@ -49,7 +49,17 @@ int main()
 	int ret = 0 ;
 	int i = 0 ;
 	socklen_t addrlen = sizeof(struct sockaddr);
+	time_t timetemp ;
 
+	timetemp = time(NULL);
+	printf("today time : %x  ---- %s.\n",timetemp,ctime(&timetemp));
+
+/*
+	bzero(&tmtime,sizeof(struct tm));
+	tmtime.tm_year = 70; 
+	tmtime.tm_mday  = 1 ;
+	tmtime.tm_wday = 4 ;
+*/
 
 	sockfd = socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP);
 	
@@ -61,7 +71,6 @@ int main()
 
 	printf("sockfd : %d.\n",sockfd);
 
-
 	for(i = 0 ; i < 4 ;  i ++)
 	{
 
@@ -69,14 +78,20 @@ int main()
 		server.sin_family = AF_INET ;
 		server.sin_port = htons(123);
 		server.sin_addr.s_addr = inet_addr(destip[i]);
-
+/*
 		bzero(sendbuf,sizeof(sendbuf));
 		sendbuf[0] = 0x1b ;
 		time(&localtime);
 		localtime = htonl(localtime + 0x83AA7E80);
 		memcpy(sendbuf + 40 , &localtime,sizeof(localtime));
+*/
 
-		ret = sendto(sockfd,sendbuf,48,0,(struct sockaddr *)&server,sizeof(struct sockaddr));
+		bzero(&ntpsend,sizeof(ntpsend));
+		ntpsend.li_vn_mode = 0x1b ;
+		ntpsend.oritimestamphigh = htonl(time(NULL) + 0x83AA7E80);  //本地时间格式
+		
+
+		ret = sendto(sockfd,&ntpsend,sizeof(ntpsend),0,(struct sockaddr *)&server,sizeof(struct sockaddr));
 
 		if(ret < 0)
 		{
@@ -105,21 +120,50 @@ int main()
 		}
 
 
-		bzero(sendbuf,sizeof(sendbuf));
-		ret = recvfrom(sockfd ,sendbuf,sizeof(sendbuf),0,(struct sockaddr *)&client,&addrlen);
+		bzero(&ntprecv,sizeof(ntprecv));
+		ret = recvfrom(sockfd ,&ntprecv,sizeof(ntprecv),0,(struct sockaddr *)&client,&addrlen);
 
 		if(ret <=  0)
 		{
 			perror("Fail to recvfrom ");
 			goto CONTINUE ;
 		}
-
+/*
 		memcpy(&nettime,sendbuf + 40 , 4);
 		nettime = nettime - 0x83AA7E80;
+*/
 
-		printf("net time : %s ", ctime(&nettime));
+
 		addrlen = sizeof(struct sockaddr);
 
+		ntprecv.root_delay 			= ntohl(ntprecv.root_delay);
+		ntprecv.root_dispersion 	= ntohl(ntprecv.root_dispersion);
+		ntprecv.reftimestamphigh	= ntohl(ntprecv.reftimestamphigh);
+		ntprecv.reftimestamplow 	= ntohl(ntprecv.reftimestamplow);
+		ntprecv.oritimestamphigh 	= ntohl(ntprecv.oritimestamphigh);
+		ntprecv.oritimestamplow 	= ntohl(ntprecv.oritimestamplow);
+		ntprecv.recvtimestamphigh 	= ntohl(ntprecv.recvtimestamphigh);
+		ntprecv.recvtimestamplow 	= ntohl(ntprecv.recvtimestamplow);
+		ntprecv.trantimestamphigh 	= ntohl(ntprecv.trantimestamphigh);
+		ntprecv.trantimestamplow 	= ntohl(ntprecv.trantimestamplow);
+
+		printf("ntprecv[li-vn-mode]       : %x  .\n",ntprecv.li_vn_mode);
+		printf("ntprecv[root_delay]       : %lu .\n",ntprecv.root_delay);
+		printf("ntprecv[root_dispersion]  : %lu .\n",ntprecv.root_dispersion);
+		printf("ntprecv[reftimestamphigh] : %lu .\n",ntprecv.reftimestamphigh);
+		printf("ntprecv[reftimestamplow]  : %lu .\n",ntprecv.reftimestamplow);
+		printf("ntprecv[oritimestamphigh] : %lu .\n",ntprecv.oritimestamphigh);
+		printf("ntprecv[oritimestamplow]  : %lu .\n",ntprecv.oritimestamplow);
+		printf("ntprecv[recvtimestamphigh]: %lu .\n",ntprecv.recvtimestamphigh);	//到达服务器的时间
+		printf("ntprecv[recvtimestamplow] : %lu .\n",ntprecv.recvtimestamplow);	
+		printf("ntprecv[trantimestamphigh]: %lu .\n",ntprecv.trantimestamphigh);  	//离开服务器的时间
+		printf("ntprecv[trantimestamplow] : %lu .\n",ntprecv.trantimestamplow);
+
+		ntprecv.recvtimestamphigh -= 0x83AA7E80 ;  //1900 - 1970 之间的时间秒数
+		printf("server recvtimestamphigh time : %s:%lu.\n",ctime(&(ntprecv.recvtimestamphigh)),ntprecv.recvtimestamplow);
+
+		ntprecv.trantimestamphigh -= 0x83AA7E80 ;  //1900 - 1970 之间的时间秒数
+		printf("server transtimes time : %s:%lu.\n",ctime(&(ntprecv.trantimestamphigh)),ntprecv.trantimestamplow);
 
 CONTINUE:
 		usleep(1000);
