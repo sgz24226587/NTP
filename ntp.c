@@ -61,6 +61,7 @@ int main()
 	tmtime.tm_wday = 4 ;
 */
 
+	bzero(&ntp,sizeof(ntp));
 	sockfd = socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP);
 	
 	if(sockfd < 0)
